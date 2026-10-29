@@ -33,6 +33,11 @@ final class ContentModel
              WHERE it.issue_id = ? ORDER BY t.slug',
             [(int)$row['id']]
         )->fetchAll();
+        $row['media'] = ds_q(
+            'SELECT media_type, url_or_path, alt_text, caption, credit
+             FROM media WHERE issue_id = ? ORDER BY position',
+            [(int)$row['id']]
+        )->fetchAll();
         return $row;
     }
 

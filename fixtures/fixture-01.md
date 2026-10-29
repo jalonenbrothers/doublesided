@@ -18,6 +18,15 @@ sides:
   - id: case-against
     label: The case against
     summary: AI is different: it targets cognitive tasks across all sectors simultaneously, and the adjustment may outpace workers' ability to retrain.
+media:
+  - type: image
+    path: /assets/img/automation-factory.svg
+    alt: Robotic arm working alongside a human operator on a factory line
+    caption: Automation has shifted tasks before — the question is speed.
+    credit: MVP Lab illustration
+  - type: youtube
+    url: https://www.youtube.com/watch?v=WSfu7jHiGtA
+    caption: IMF discussion of Gen-AI and the future of work.
 sources:
   - id: src-imf
     title: "Gen-AI: Artificial Intelligence and the Future of Work"

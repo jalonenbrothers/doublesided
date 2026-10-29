@@ -273,6 +273,9 @@ check(str_contains($htmlIssue, 'imf.org'), 'http: source links rendered');
 check(str_contains($htmlIssue, 'International Monetary Fund'), 'http: source attribution rendered');
 check(str_contains($htmlIssue, 'rel="canonical"'), 'http: canonical URL present');
 check(str_contains($htmlIssue, '<sup class="src-ref"'), 'http: citation chips in body');
+check(str_contains($htmlIssue, '<img src="/assets/img/automation-factory.svg"'), 'http: media image rendered');
+check(str_contains($htmlIssue, 'youtube-nocookie.com/embed/WSfu7jHiGtA'), 'http: youtube embed via whitelisted host');
+check(!str_contains($htmlIssue, 'src="https://www.youtube.com/watch'), 'http: no raw youtube watch URL in iframe');
 [$st, $htmlMissing] = httpGet('/issue/does-not-exist');
 check($st === 404, 'http: missing slug 404');
 

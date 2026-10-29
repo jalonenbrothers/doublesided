@@ -40,12 +40,39 @@ require __DIR__ . '/partials/head.php';
   </section>
 
   <?php
-  // shared ground / unknowns live in the fixture's body sections; they are
-  // also parsed from body_markdown of the perspectives? No — they were
-  // stored as body sections. Re-derive them from the DB shared_ground/
-  // unknowns columns when present; the importer stored them in the issue
-  // sections (Phase 1 view modes will get dedicated routes).
-  ?>
+  // media: validated + allowlisted by the importer (images: site-relative
+  // or https; youtube: 11-char id or safe URL). Rendered with strict
+  // escaping; YouTube goes through the whitelisted youtube-nocookie
+  // host only — never an arbitrary embed URL.
+  $youtubeId = null;
+  foreach ($issue['media'] ?? [] as $mItem):
+      if ($mItem['media_type'] === 'image'): ?>
+    <figure class="media">
+      <img src="<?= ds_e($mItem['url_or_path']) ?>" alt="<?= ds_e($mItem['alt_text']) ?>" loading="lazy">
+      <?php if (($mItem['caption'] ?? '') !== ''): ?>
+      <figcaption><?= ds_e($mItem['caption']) ?><?php if (($mItem['credit'] ?? '') !== ''): ?> — <span class="credit"><?= ds_e($mItem['credit']) ?></span><?php endif; ?></figcaption>
+      <?php endif; ?>
+    </figure>
+  <?php elseif ($mItem['media_type'] === 'youtube'):
+          $youtubeId = preg_match('#(?:youtube\.com/watch\?v=|youtube\.com/shorts/|youtu\.be/)([A-Za-z0-9_-]{11})#', (string)$mItem['url_or_path'], $ym)
+              ? $ym[1]
+              : (preg_match('/^[A-Za-z0-9_-]{11}$/', (string)$mItem['url_or_path']) ? $mItem['url_or_path'] : null);
+          if ($youtubeId !== null): ?>
+    <figure class="media video-embed-wrap">
+      <div class="video-embed">
+        <iframe src="https://www.youtube-nocookie.com/embed/<?= ds_e($youtubeId) ?>"
+                title="<?= ds_e($mItem['caption'] !== '' ? $mItem['caption'] : 'YouTube video player') ?>"
+                loading="lazy" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+      <?php if (($mItem['caption'] ?? '') !== ''): ?>
+      <figcaption><?= ds_e($mItem['caption']) ?></figcaption>
+      <?php endif; ?>
+    </figure>
+  <?php endif;
+      endif;
+  endforeach; ?>
+
   <?php if (!empty($issue['shared_ground'])): ?>
   <section class="shared-ground">
     <h2>Shared ground</h2>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450" role="img" aria-label="Robotic arm working alongside a human operator on a factory line">
+  <rect width="800" height="450" fill="#12321f"/>
+  <rect x="40" y="300" width="720" height="20" fill="#0d2417"/>
+  <!-- conveyor line -->
+  <circle cx="110" cy="310" r="12" fill="#234534"/><circle cx="170" cy="310" r="12" fill="#234534"/>
+  <circle cx="230" cy="310" r="12" fill="#234534"/><circle cx="290" cy="310" r="12" fill="#234534"/>
+  <circle cx="350" cy="310" r="12" fill="#234534"/><circle cx="410" cy="310" r="12" fill="#234534"/>
+  <circle cx="470" cy="310" r="12" fill="#234534"/><circle cx="530" cy="310" r="12" fill="#234534"/>
+  <circle cx="590" cy="310" r="12" fill="#234534"/><circle cx="650" cy="310" r="12" fill="#234534"/>
+  <!-- boxes on the line -->
+  <rect x="500" y="270" width="50" height="30" rx="4" fill="#b0762a"/>
+  <rect x="420" y="270" width="50" height="30" rx="4" fill="#8f5f22"/>
+  <!-- robotic arm -->
+  <rect x="180" y="180" width="26" height="120" rx="10" fill="#8a8f96" transform="rotate(-18 193 240)"/>
+  <rect x="205" y="150" width="22" height="90" rx="9" fill="#aab0b8" transform="rotate(28 216 195)"/>
+  <circle cx="252" cy="196" r="16" fill="#6d747c"/>
+  <rect x="240" y="192" width="44" height="12" rx="5" fill="#d7dade"/>
+  <!-- human operator -->
+  <circle cx="640" cy="216" r="18" fill="#d9a066"/>
+  <rect x="624" y="238" width="34" height="62" rx="12" fill="#3b74b1"/>
+  <rect x="628" y="300" width="12" height="30" fill="#274a6d"/>
+  <rect x="644" y="300" width="12" height="30" fill="#274a6d"/>
+  <rect x="656" y="244" width="26" height="10" rx="5" fill="#d9a066" transform="rotate(-24 656 244)"/>
+  <!-- text -->
+  <text x="400" y="380" font-family="system-ui, sans-serif" font-size="22" fill="#e6efe9" text-anchor="middle">Two Sides — automation, again</text>
+  <text x="400" y="410" font-family="system-ui, sans-serif" font-size="15" fill="#9db3a6" text-anchor="middle">MVP Lab illustration</text>
+</svg>
