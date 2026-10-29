@@ -1,0 +1,11 @@
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+# --- internals: never web-accessible (stack standard + ADR-004) ---
+<IfModule mod_alias.c>
+</IfModule>
+# (mod_alias RedirectMatch lives in the ROOT .htaccess for Hostinger layout;
+#  when docroot = public/, this file is the only web root anyway.)

@@ -1,0 +1,31 @@
+# doublesided — root .htaccess (Hostinger layout: repo root = web root)
+# public/ holds the front controller; everything else is denied.
+Options -Indexes
+RewriteEngine On
+DirectoryIndex public/index.php
+
+# Root -> front controller
+RewriteRule ^$ public/index.php [L]
+
+# Real public assets pass through unchanged
+RewriteRule ^(assets/.*)$ public/$1 [L]
+
+# Everything else -> front controller (it 404s what it doesn't know)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ public/index.php [QSA,L]
+
+# Internals must 404 — verified under real Apache, not just dev router.
+RedirectMatch 404 ^/lib/.*$
+RedirectMatch 404 ^/src/.*$
+RedirectMatch 404 ^/tests/.*$
+RedirectMatch 404 ^/migrations/.*$
+RedirectMatch 404 ^/fixtures/.*$
+RedirectMatch 404 ^/content/.*$
+RedirectMatch 404 ^/bin/.*$
+RedirectMatch 404 ^/docs/.*$
+RedirectMatch 404 ^/resources/.*$
+RedirectMatch 404 ^/dockerdev/.*$
+RedirectMatch 404 ^/\.git
+RedirectMatch 404 ^/lib/.*\.php$
+RedirectMatch 404 ^/router\.php$

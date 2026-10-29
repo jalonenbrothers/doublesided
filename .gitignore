@@ -1,0 +1,5 @@
+config.php
+lib/config.php
+*.sqlite
+storage/
+

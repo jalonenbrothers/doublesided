@@ -1,0 +1,39 @@
+/* doublesided — one stylesheet, CSS variables per-site later (Phase 2) */
+:root { --ink:#1a1a2e; --muted:#5a5a72; --a:#0b6e4f; --b:#8a2b3b; --bg:#faf9f6; --card:#fff; }
+* { box-sizing:border-box; }
+body { margin:0; font:16px/1.6 system-ui, sans-serif; color:var(--ink); background:var(--bg); }
+main { max-width:1080px; margin:0 auto; padding:1rem; }
+.site-head { display:flex; align-items:baseline; gap:1rem; padding:1rem 2rem; border-bottom:1px solid #ddd; }
+.brand { font-weight:800; font-size:1.3rem; color:var(--ink); text-decoration:none; }
+.tagline { color:var(--muted); font-size:.9rem; }
+.site-foot { padding:2rem; color:var(--muted); font-size:.85rem; text-align:center; }
+
+/* compare: two columns desktop, stacked mobile */
+.compare { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+@media (max-width:720px){ .compare{ grid-template-columns:1fr; } .side-a{ order:1; } .side-b{ order:2; } }
+.side { background:var(--card); border-radius:10px; padding:1rem 1.25rem; border-top:4px solid var(--muted); }
+.side-a { border-top-color:var(--a); }
+.side-b { border-top-color:var(--b); }
+.side-label.a { color:var(--a); } .side-label.b { color:var(--b); }
+.side-summary { font-style:italic; color:var(--muted); }
+.src-ref a { font-size:.7em; text-decoration:none; background:#eee; border-radius:4px; padding:0 .3em; color:#333; }
+
+.issue-head h1 { font-size:1.7rem; margin-bottom:.3rem; }
+.meta,.topics li { color:var(--muted); font-size:.85rem; }
+.topics { list-style:none; display:flex; gap:.6rem; padding:0; }
+
+.home-title { font-size:1.5rem; }
+.issue-list { list-style:none; padding:0; display:grid; gap:1rem; }
+.issue-link { display:grid; gap:.2rem; padding:1rem; background:var(--card); border-radius:10px; text-decoration:none; color:var(--ink); }
+.issue-link .sum { color:var(--muted); font-size:.95rem; }
+.issue-link .meta { font-size:.8rem; }
+
+.shared-ground,.unknowns,.sources { background:var(--card); border-radius:10px; padding:1rem 1.25rem; margin-top:1.5rem; }
+.source-list { padding-left:1.2rem; }
+.source { margin:.4rem 0; }
+.src-ref sup { line-height:0; }
+
+@media (prefers-color-scheme:dark){
+  :root { --ink:#e8e8ef; --muted:#a0a0b8; --bg:#12121c; --card:#1d1d2b; }
+  .brand { color:var(--ink); }
+}
