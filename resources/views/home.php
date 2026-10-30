@@ -24,4 +24,13 @@ require __DIR__ . '/partials/head.php';
     <?php endforeach; ?>
   </ul>
 <?php endif; ?>
+<section class="methodology" id="methodology">
+  <h2>How we work</h2>
+  <p>Every issue starts as a reviewed content file: two perspectives written
+     in full, a shared evidence base where each claim links its source, an
+     explicit list of what remains uncertain, and a synthesis that never
+     pretends the question is settled. Content is imported, validated and
+     published through a pipeline that records every revision — corrections
+     are tracked, not quietly applied.</p>
+</section>
 <?php require __DIR__ . '/partials/foot.php'; ?>

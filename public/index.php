@@ -4,7 +4,8 @@ declare(strict_types=1);
 /**
  * public/index.php — front controller (spec §7.4).
  * Routes: /            home (latest published)
- *         /issue/{slug} compare view (published only; else 404)
+ *         /issue/{slug}[?view=merged|side-a|side-b|evidence|timeline|compact]
+ *                       compare view (published only; else 404)
  */
 require dirname(__DIR__) . '/lib/db.php';
 require dirname(__DIR__) . '/src/FrontMatter.php';
@@ -34,9 +35,14 @@ try {
             require dirname(__DIR__) . '/resources/views/404.php';
             exit;
         }
-        // canonical URL from trusted config, never the Host header
+        // canonical URL from trusted config, never the Host header.
+        // View modes (?view=) are NOT canonical pages — no duplicate URLs.
         $canonical = ds_base_url() . '/issue/' . rawurlencode($issue['slug']);
         header('Link: <' . $canonical . '>; rel="canonical"');
+        // whitelisted view mode; anything else silently falls back to merged
+        $view = $_GET['view'] ?? 'merged';
+        $view = is_string($view) && in_array($view, ['merged', 'side-a', 'side-b', 'evidence', 'timeline', 'compact'], true)
+            ? $view : 'merged';
         require dirname(__DIR__) . '/resources/views/issue-compare.php';
         exit;
     }

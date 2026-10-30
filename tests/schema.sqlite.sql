@@ -11,8 +11,11 @@ CREATE TABLE IF NOT EXISTS issues (
   reviewed_at TEXT,
   canonical_url TEXT,
   summary TEXT NOT NULL,
+  orientation TEXT,
   shared_ground TEXT,
+  evidence TEXT,
   unknowns TEXT,
+  synthesis TEXT,
   content_hash TEXT NOT NULL,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL

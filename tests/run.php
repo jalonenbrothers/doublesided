@@ -6,6 +6,8 @@ declare(strict_types=1);
  * Part 2: integration (importer on sqlite) incl. security set.
  * Part 3: feature/http — dev router requests (published 200,
  *         draft 404, XSS escaping, SQLi, traversal, security headers).
+ * Part 4: view modes + QA bug regressions (BUG1 body sections +
+ *         media, BUG2 methodology anchor, BUG3 favicon).
  *
  * Usage:  php tests/run.php            (sqlite, whole suite)
  * Exit code = number of failures (0 = green).
@@ -173,6 +175,17 @@ $revs = $pdo->query("SELECT COUNT(*) c FROM revisions")->fetch();
 check((int)$revs['c'] === 1, 'import: revision recorded');
 check($pdo->query("SELECT git_hash FROM revisions LIMIT 1")->fetch()['git_hash'] === str_repeat('a', 40), 'import: git hash stored');
 
+// QA BUG1 regression: all body sections persisted on the issues row
+check(str_contains((string)$row['orientation'], 'This comparison asks whether'), 'BUG1: orientation section stored');
+check(str_contains((string)$row['shared_ground'], 'Both sides accept that'), 'BUG1: shared ground section stored');
+check(str_contains((string)$row['evidence'], 'close to zero so far'), 'BUG1: evidence section stored');
+check(str_contains((string)$row['unknowns'], 'How fast firms actually adopt'), 'BUG1: unknowns section stored');
+check(str_contains((string)$row['synthesis'], 'AI takes tasks'), 'BUG1: synthesis section stored');
+// media rows (QA BUG1 regression: ContentModel must SELECT media)
+$mediaRows = $pdo->query("SELECT * FROM media ORDER BY position")->fetchAll();
+check(count($mediaRows) === 2, 'BUG1: 2 media rows stored');
+check($mediaRows[0]['media_type'] === 'image', 'BUG1: image media row present');
+
 // idempotence: re-import unchanged = no-op, no duplicate, no new revision
 $r2 = $imp->importString($fixtureRaw, false, str_repeat('a', 40), 'fixture-01.md');
 check($r2['result'] === 'unchanged', 'import: idempotent (unchanged)');
@@ -186,6 +199,9 @@ check($r3['result'] === 'updated', 'import: changed content updates');
 check((int)$pdo->query("SELECT COUNT(*) c FROM issues")->fetch()['c'] === 1, 'import: still one issue after update');
 check((int)$pdo->query("SELECT COUNT(*) c FROM revisions")->fetch()['c'] === 2, 'import: new revision on change');
 check((int)$pdo->query("SELECT COUNT(*) c FROM perspectives")->fetch()['c'] === 2, 'import: children replaced, not duplicated');
+// updated import refreshes body sections too
+$rowUpd = $pdo->query("SELECT synthesis FROM issues WHERE slug='will-ai-take-our-jobs'")->fetch();
+check(str_contains((string)$rowUpd['synthesis'], 'AI takes tasks'), 'import: update refreshes body sections');
 
 // dry-run writes nothing
 $pdo->exec("DELETE FROM issues");
@@ -227,20 +243,6 @@ $configTest = "<?php declare(strict_types=1);\n"
 file_put_contents($root . '/lib/config.php', $configTest);
 $imp->importString($fixtureRaw, false, null, 'fixture-01.md');
 
-$router = $root . '/router.php';
-if (!is_file($router)) {
-    // minimal router: serve requests via PHP built-in server style
-    file_put_contents($router, <<<PHP
-<?php declare(strict_types=1);
-// dev router: mimic Hostinger rewrite — everything -> public/index.php
-\$_SERVER['REQUEST_URI'] = \$_GET['r'] ?? '/';
-\$_SERVER['SCRIPT_NAME'] = '/public/index.php';
-chdir(__DIR__ . '/public');
-require __DIR__ . '/public/index.php';
-PHP
-    );
-}
-
 function httpGet(string $uri): array
 {
     global $root;
@@ -266,16 +268,59 @@ usleep(300000);
 
 [$st, $htmlHome] = httpGet('/');
 check($st === 200 && str_contains($htmlHome, 'Will AI take our jobs?'), 'http: home lists published issue');
+check(str_contains($htmlHome, 'id="methodology"'), 'BUG2: home has #methodology anchor');
 [$st, $htmlIssue] = httpGet('/issue/will-ai-take-our-jobs');
 check($st === 200, 'http: published issue 200');
 check(str_contains($htmlIssue, 'The case for') && str_contains($htmlIssue, 'The case against'), 'http: both sides rendered');
 check(str_contains($htmlIssue, 'imf.org'), 'http: source links rendered');
 check(str_contains($htmlIssue, 'International Monetary Fund'), 'http: source attribution rendered');
 check(str_contains($htmlIssue, 'rel="canonical"'), 'http: canonical URL present');
+$canonHrefOk = (bool)preg_match('#<link rel="canonical" href="([^"]+)">#', $htmlIssue, $canonM)
+    && !str_contains($canonM[1], '?view=');
+check($canonHrefOk, 'http: canonical href carries no ?view=');
 check(str_contains($htmlIssue, '<sup class="src-ref"'), 'http: citation chips in body');
 check(str_contains($htmlIssue, '<img src="/assets/img/automation-factory.svg"'), 'http: media image rendered');
 check(str_contains($htmlIssue, 'youtube-nocookie.com/embed/WSfu7jHiGtA'), 'http: youtube embed via whitelisted host');
 check(!str_contains($htmlIssue, 'src="https://www.youtube.com/watch'), 'http: no raw youtube watch URL in iframe');
+check(str_contains($htmlIssue, 'rel="icon"'), 'BUG3: favicon linked');
+
+// QA BUG1 regression: all body sections + media render in the view
+check(str_contains($htmlIssue, 'Both sides accept that'), 'BUG1 http: shared ground rendered');
+check(str_contains($htmlIssue, 'Shared ground'), 'BUG1 http: shared ground heading present');
+check(str_contains($htmlIssue, 'What the evidence says'), 'BUG1 http: evidence heading present');
+check(str_contains($htmlIssue, 'close to zero so far'), 'BUG1 http: evidence body rendered');
+check(str_contains($htmlIssue, 'What remains uncertain'), 'BUG1 http: unknowns heading present');
+check(str_contains($htmlIssue, 'How fast firms actually adopt'), 'BUG1 http: unknowns body rendered');
+check(str_contains($htmlIssue, 'Synthesis'), 'BUG1 http: synthesis heading present');
+check(str_contains($htmlIssue, 'AI takes tasks'), 'BUG1 http: synthesis body rendered');
+check(str_contains($htmlIssue, 'This comparison asks whether'), 'BUG1 http: orientation rendered');
+
+// view modes (spec §15 Phase 3): server renders all six; ?view= picks active
+check(substr_count($htmlIssue, 'data-view="') >= 6, 'views: all six view sections present');
+check(substr_count($htmlIssue, 'hidden') >= 5, 'views: non-active sections server-hidden (SEO: content still in DOM)');
+check(substr_count($htmlIssue, 'aria-pressed=') === 6, 'views: aria-pressed on all 6 toggles');
+check(substr_count($htmlIssue, 'aria-pressed="true"') === 1, 'views: exactly one pressed toggle (merged)');
+foreach (['side-a', 'side-b', 'evidence', 'timeline', 'compact'] as $vk) {
+    [$stv, $htmlV] = httpGet('/issue/will-ai-take-our-jobs?view=' . $vk);
+    check($stv === 200, "views: ?view=$vk returns 200");
+    // exactly the requested toggle is pressed (merged never pressed here)
+    $pressedOk = substr_count($htmlV, 'aria-pressed="true"') === 1
+        && (bool)preg_match('#class="view-btn is-active"\s+href="\?view=' . $vk . '"\s+data-view="' . $vk . '"\s+aria-pressed="true"#s', $htmlV);
+}
+[$stv, $htmlV] = httpGet('/issue/will-ai-take-our-jobs?view=nonsense');
+check($stv === 200 && str_contains($htmlV, 'aria-pressed="true"') && str_contains($htmlV, 'v-merged'),
+    'views: unknown ?view falls back to merged');
+// side-a view shows only side A column body as its lead
+[$stv, $htmlA] = httpGet('/issue/will-ai-take-our-jobs?view=side-a');
+check($stv === 200 && str_contains($htmlA, 'v-side-a'), 'views: side-a section rendered');
+// timeline view renders the numbered sequence
+[$stv, $htmlTl] = httpGet('/issue/will-ai-take-our-jobs?view=timeline');
+check($stv === 200 && str_contains($htmlTl, 'class="tl"'), 'views: timeline list rendered');
+check(substr_count($htmlTl, 'tl-step') >= 6, 'views: timeline has all steps');
+// compact view renders both short summaries
+[$stv, $htmlCp] = httpGet('/issue/will-ai-take-our-jobs?view=compact');
+check($stv === 200 && str_contains($htmlCp, 'compact-grid'), 'views: compact grid rendered');
+
 [$st, $htmlMissing] = httpGet('/issue/does-not-exist');
 check($st === 404, 'http: missing slug 404');
 

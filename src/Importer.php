@@ -12,6 +12,11 @@ declare(strict_types=1);
  * upsert by slug, revision record, summary + non-zero exit on
  * failure. --dry-run validates without writing. Publication never
  * happens implicitly: fixture status must say 'published'.
+ *
+ * All seven body sections are persisted on the issues row:
+ * orientation, the case for / the case against (-> perspectives),
+ * shared ground, what the evidence says, what remains uncertain,
+ * synthesis (QA BUG1 fix).
  */
 final class ImportError extends Exception
 {
@@ -302,51 +307,9 @@ final class Importer
         return hash('sha256', json_encode($fm, JSON_UNESCAPED_SLASHES) . "\n---\n" . $body);
     }
 
-    // ------------------------------------------------ writing
-
-    private function upsertIssue(array $fm, string $body, ?int $id): int
+    /** Split a markdown body into lowercase-section-name => markdown map. */
+    public static function splitSections(string $body): array
     {
-        $hash = self::contentHash($fm, $body);
-        $now = date('Y-m-d H:i:s');
-        if ($id) {
-            $this->pdo->prepare(
-                'UPDATE issues SET title=?, dek=?, content_type=?, status=?, published_at=?,
-                 reviewed_at=?, summary=?, content_hash=?, updated_at=? WHERE id=?'
-            )->execute([
-                (string)$fm['title'],
-                isset($fm['dek']) ? (string)$fm['dek'] : null,
-                (string)$fm['content_type'],
-                (string)$fm['status'],
-                !empty($fm['published_at']) ? $fm['published_at'] : null,
-                !empty($fm['reviewed_at']) ? $fm['reviewed_at'] : null,
-                (string)$fm['summary'],
-                $hash, $now, $id,
-            ]);
-            // refresh body sections on perspectives
-            return $id;
-        }
-        $this->pdo->prepare(
-            'INSERT INTO issues (slug, title, dek, content_type, status, published_at,
-             reviewed_at, summary, content_hash, created_at, updated_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?)'
-        )->execute([
-            (string)$fm['slug'], (string)$fm['title'],
-            isset($fm['dek']) ? (string)$fm['dek'] : null,
-            (string)$fm['content_type'], (string)$fm['status'],
-            !empty($fm['published_at']) ? $fm['published_at'] : null,
-            !empty($fm['reviewed_at']) ? $fm['reviewed_at'] : null,
-            (string)$fm['summary'], $hash, $now, $now,
-        ]);
-        return (int)$this->pdo->lastInsertId();
-    }
-
-    private function replaceChildren(int $issueId, array $fm, string $body): void
-    {
-        foreach (['perspectives', 'issue_sources', 'media', 'issue_topics'] as $t) {
-            $this->pdo->prepare("DELETE FROM $t WHERE issue_id = ?")->execute([$issueId]);
-        }
-
-        // split body into side sections ("The case for" / "The case against")
         $sections = [];
         $cur = '';
         $buf = [];
@@ -364,6 +327,68 @@ final class Importer
         if ($cur !== '') {
             $sections[$cur] = trim(implode("\n", $buf));
         }
+        return $sections;
+    }
+
+    // ------------------------------------------------ writing
+
+    private function upsertIssue(array $fm, string $body, ?int $id): int
+    {
+        $hash = self::contentHash($fm, $body);
+        $now = date('Y-m-d H:i:s');
+        $sec = self::splitSections($body);
+        if ($id) {
+            $this->pdo->prepare(
+                'UPDATE issues SET title=?, dek=?, content_type=?, status=?, published_at=?,
+                 reviewed_at=?, summary=?, orientation=?, shared_ground=?, evidence=?,
+                 unknowns=?, synthesis=?, content_hash=?, updated_at=? WHERE id=?'
+            )->execute([
+                (string)$fm['title'],
+                isset($fm['dek']) ? (string)$fm['dek'] : null,
+                (string)$fm['content_type'],
+                (string)$fm['status'],
+                !empty($fm['published_at']) ? $fm['published_at'] : null,
+                !empty($fm['reviewed_at']) ? $fm['reviewed_at'] : null,
+                (string)$fm['summary'],
+                $sec['orientation'] ?: null,
+                $sec['shared ground'] ?: null,
+                $sec['what the evidence says'] ?: null,
+                $sec['what remains uncertain'] ?: null,
+                $sec['synthesis'] ?: null,
+                $hash, $now, $id,
+            ]);
+            return $id;
+        }
+        $this->pdo->prepare(
+            'INSERT INTO issues (slug, title, dek, content_type, status, published_at,
+             reviewed_at, summary, orientation, shared_ground, evidence, unknowns,
+             synthesis, content_hash, created_at, updated_at)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        )->execute([
+            (string)$fm['slug'], (string)$fm['title'],
+            isset($fm['dek']) ? (string)$fm['dek'] : null,
+            (string)$fm['content_type'], (string)$fm['status'],
+            !empty($fm['published_at']) ? $fm['published_at'] : null,
+            !empty($fm['reviewed_at']) ? $fm['reviewed_at'] : null,
+            (string)$fm['summary'],
+            $sec['orientation'] ?: null,
+            $sec['shared ground'] ?: null,
+            $sec['what the evidence says'] ?: null,
+            $sec['what remains uncertain'] ?: null,
+            $sec['synthesis'] ?: null,
+            $hash, $now, $now,
+        ]);
+        return (int)$this->pdo->lastInsertId();
+    }
+
+    private function replaceChildren(int $issueId, array $fm, string $body): void
+    {
+        foreach (['perspectives', 'issue_sources', 'media', 'issue_topics'] as $t) {
+            $this->pdo->prepare("DELETE FROM $t WHERE issue_id = ?")->execute([$issueId]);
+        }
+
+        // split body into side sections ("The case for" / "The case against")
+        $sections = self::splitSections($body);
         $now = date('Y-m-d H:i:s');
         $pos = 0;
         $bodyBySlot = ['the case for', 'the case against'];

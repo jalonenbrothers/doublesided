@@ -9,6 +9,7 @@
 <link rel="canonical" href="<?= ds_e($canonical) ?>">
 <?php endif; ?>
 <meta name="description" content="<?= ds_e($description ?? 'Two sides of contested questions — evidence, shared ground and visible uncertainty.') ?>">
+<link rel="icon" href="<?= ds_e(($base ?? '') . '/assets/img/favicon.svg') ?>" type="image/svg+xml">
 <link rel="stylesheet" href="<?= ds_e(($base ?? '') . '/assets/css/site.css') ?>">
 </head>
 <body>
